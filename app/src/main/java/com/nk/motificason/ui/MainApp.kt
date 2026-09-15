@@ -20,13 +20,19 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import com.nk.motificason.data.model.Habit
+import com.nk.motificason.data.model.LockIn
 import com.nk.motificason.ui.home.HomeViewModel
 import com.nk.motificason.ui.lockin.LockInScreen
 import com.nk.motificason.ui.lockin.LockInViewModel
+import com.nk.motificason.ui.streak.StreakScreen
+import com.nk.motificason.ui.streak.StreakViewModel
 
 enum class AuthenticatedScreen {
     HOME,
-    LOCK_INS
+    LOCK_INS,
+    HABIT_STREAK
 }
 
 @Composable
@@ -37,6 +43,8 @@ fun MainApp(
     val sessionStatus by viewModel.sessionStatus.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     var authenticatedScreen by rememberSaveable { mutableStateOf(AuthenticatedScreen.HOME) }
+    var selectedHabit by rememberSaveable(stateSaver = androidx.compose.runtime.saveable.autoSaver()) { mutableStateOf<Habit?>(null) }
+    var selectedLockIn by rememberSaveable(stateSaver = androidx.compose.runtime.saveable.autoSaver()) { mutableStateOf<LockIn?>(null) }
 
     when (sessionStatus) {
         is SessionStatus.Initializing -> {
@@ -92,8 +100,38 @@ fun MainApp(
                         onCloseAddHabitDialog = { lockInViewModel.closeAddHabitDialog() },
                         onHabitTitleChange = { lockInViewModel.onHabitTitleChange(it) },
                         onCreateHabit = { lockInViewModel.createHabit() },
+                        onHabitClick = { habit, lockIn ->
+                            selectedHabit = habit
+                            selectedLockIn = lockIn
+                            authenticatedScreen = AuthenticatedScreen.HABIT_STREAK
+                        },
                         modifier = modifier
                     )
+                }
+                AuthenticatedScreen.HABIT_STREAK -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                    }
+                    val streakViewModel: StreakViewModel = viewModel()
+                    val streakUiState by streakViewModel.uiState.collectAsState()
+                    val habit = selectedHabit
+
+                    if (habit != null) {
+                        LaunchedEffect(habit.id) {
+                            streakViewModel.loadStreak(habit)
+                        }
+                        StreakScreen(
+                            habit = habit,
+                            lockIn = selectedLockIn,
+                            uiState = streakUiState,
+                            onBackClick = {
+                                authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                            },
+                            modifier = modifier
+                        )
+                    } else {
+                        authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                    }
                 }
             }
         }

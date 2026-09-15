@@ -144,4 +144,69 @@ class LockInRepository {
                 .decodeSingle<Habit>()
         }
     }
+
+    suspend fun getHabitStreak(
+        habit: Habit,
+        userId: String,
+        today: java.time.LocalDate
+    ): Result<com.nk.motificason.data.engine.StreakCalculationResult> {
+        return runCatching {
+            val checkIns = client.from("check_ins")
+                .select {
+                    filter {
+                        eq("habit_id", habit.id)
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<CheckIn>()
+
+            val freezes = client.from("streak_freezes")
+                .select {
+                    filter {
+                        eq("habit_id", habit.id)
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<com.nk.motificason.data.model.StreakFreeze>()
+
+            val habitCreatedDate = habit.createdAt?.substringBefore("T")?.let {
+                runCatching { java.time.LocalDate.parse(it) }.getOrNull()
+            }
+
+            val result = com.nk.motificason.data.engine.StreakEngine.calculate(
+                today = today,
+                habitCreatedAt = habitCreatedDate,
+                checkIns = checkIns,
+                freezes = freezes
+            )
+
+            // Persist newly consumed freezes to Supabase
+            for (consumed in result.freezesConsumedInThisRun) {
+                val freeze = consumed.first
+                val usedDate = consumed.second
+                client.from("streak_freezes")
+                    .update(com.nk.motificason.data.model.StreakFreezeUpdate(usedOnDate = usedDate.toString())) {
+                        filter {
+                            eq("id", freeze.id)
+                            eq("user_id", userId)
+                        }
+                    }
+            }
+
+            // If milestone reached (multiple of 7) and freeze not yet awarded today, award new freeze
+            if (result.shouldAwardMilestoneFreeze) {
+                client.from("streak_freezes")
+                    .insert(
+                        com.nk.motificason.data.model.StreakFreezeInsert(
+                            habitId = habit.id,
+                            userId = userId,
+                            earnedAt = today.toString(),
+                            usedOnDate = null
+                        )
+                    )
+            }
+
+            result
+        }
+    }
 }

@@ -52,6 +52,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import com.nk.motificason.data.model.Habit
 import com.nk.motificason.data.model.LockIn
 import com.nk.motificason.data.model.LockInWithHabits
 import com.nk.motificason.data.model.PRESET_LOCK_INS
@@ -73,6 +78,7 @@ fun LockInScreen(
     onCloseAddHabitDialog: () -> Unit,
     onHabitTitleChange: (String) -> Unit,
     onCreateHabit: () -> Unit,
+    onHabitClick: (Habit, LockIn) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -207,7 +213,8 @@ fun LockInScreen(
                         items(uiState.lockInsWithHabits, key = { it.lockIn.id }) { item ->
                             LockInCard(
                                 item = item,
-                                onAddHabitClick = { onOpenAddHabitDialog(item.lockIn) }
+                                onAddHabitClick = { onOpenAddHabitDialog(item.lockIn) },
+                                onHabitClick = onHabitClick
                             )
                         }
                         // Extra bottom space so FAB doesn't cover last item
@@ -262,6 +269,7 @@ fun LockInScreen(
 fun LockInCard(
     item: LockInWithHabits,
     onAddHabitClick: () -> Unit,
+    onHabitClick: (Habit, LockIn) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -328,21 +336,51 @@ fun LockInCard(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onHabitClick(habit, item.lockIn) }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = habit.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = habit.title,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalFireDepartment,
+                                    contentDescription = "Streak",
+                                    tint = Color(0xFFFF5722),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Streak",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
                 }

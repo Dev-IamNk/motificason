@@ -63,6 +63,29 @@ data class CheckInUpdate(
     val completed: Boolean
 )
 
+@Serializable
+data class StreakFreeze(
+    val id: String = "",
+    @SerialName("habit_id") val habitId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("earned_at") val earnedAt: String,
+    @SerialName("used_on_date") val usedOnDate: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class StreakFreezeInsert(
+    @SerialName("habit_id") val habitId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("earned_at") val earnedAt: String,
+    @SerialName("used_on_date") val usedOnDate: String? = null
+)
+
+@Serializable
+data class StreakFreezeUpdate(
+    @SerialName("used_on_date") val usedOnDate: String
+)
+
 data class HabitWithCheckIn(
     val habit: Habit,
     val isCompleted: Boolean = false,
