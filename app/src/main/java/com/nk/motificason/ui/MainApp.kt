@@ -28,6 +28,10 @@ import com.nk.motificason.ui.lockin.LockInScreen
 import com.nk.motificason.ui.lockin.LockInViewModel
 import com.nk.motificason.ui.achievements.AchievementsScreen
 import com.nk.motificason.ui.achievements.AchievementsViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.nk.motificason.ui.notification.NotificationSettingsScreen
+import com.nk.motificason.ui.notification.NotificationSettingsViewModel
+import com.nk.motificason.notification.NotificationScheduler
 import com.nk.motificason.ui.streak.StreakScreen
 import com.nk.motificason.ui.streak.StreakViewModel
 
@@ -35,7 +39,8 @@ enum class AuthenticatedScreen {
     HOME,
     LOCK_INS,
     HABIT_STREAK,
-    ACHIEVEMENTS
+    ACHIEVEMENTS,
+    NOTIFICATION_SETTINGS
 }
 
 @Composable
@@ -60,6 +65,11 @@ fun MainApp(
         }
         is SessionStatus.Authenticated -> {
             val homeViewModel: HomeViewModel = viewModel()
+            val appContext = LocalContext.current.applicationContext
+            LaunchedEffect(Unit) {
+                NotificationScheduler.rescheduleAll(appContext)
+            }
+
             when (authenticatedScreen) {
                 AuthenticatedScreen.HOME -> {
                     val homeUiState by homeViewModel.uiState.collectAsState()
@@ -77,6 +87,9 @@ fun MainApp(
                         },
                         onNavigateToAchievements = {
                             authenticatedScreen = AuthenticatedScreen.ACHIEVEMENTS
+                        },
+                        onNavigateToNotificationSettings = {
+                            authenticatedScreen = AuthenticatedScreen.NOTIFICATION_SETTINGS
                         },
                         modifier = modifier
                     )
@@ -154,6 +167,33 @@ fun MainApp(
                             homeViewModel.loadTodayDashboard()
                         },
                         onRefresh = { achievementsViewModel.loadAchievements() },
+                        modifier = modifier
+                    )
+                }
+                AuthenticatedScreen.NOTIFICATION_SETTINGS -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.HOME
+                        homeViewModel.loadTodayDashboard()
+                    }
+                    val notificationViewModel: NotificationSettingsViewModel = viewModel()
+                    val notificationUiState by notificationViewModel.uiState.collectAsState()
+                    val context = LocalContext.current
+
+                    LaunchedEffect(Unit) {
+                        notificationViewModel.loadSettings(context)
+                    }
+
+                    NotificationSettingsScreen(
+                        uiState = notificationUiState,
+                        onToneSelected = { notificationViewModel.selectTone(context, it) },
+                        onToggleSlot = { slot, enabled -> notificationViewModel.toggleSlot(context, slot, enabled) },
+                        onTimeUpdated = { slot, newTime -> notificationViewModel.updateSlotTime(context, slot, newTime) },
+                        onSendTestNotification = { notificationViewModel.sendTestNotification(context) },
+                        onClearInfoMessage = { notificationViewModel.clearInfoMessage() },
+                        onBackClick = {
+                            authenticatedScreen = AuthenticatedScreen.HOME
+                            homeViewModel.loadTodayDashboard()
+                        },
                         modifier = modifier
                     )
                 }

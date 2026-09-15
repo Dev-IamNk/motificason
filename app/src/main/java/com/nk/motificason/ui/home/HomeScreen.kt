@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -65,6 +66,7 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onNavigateToLockIns: () -> Unit,
     onNavigateToAchievements: () -> Unit,
+    onNavigateToNotificationSettings: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -89,6 +91,12 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToNotificationSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notification Settings"
+                        )
+                    }
                     IconButton(onClick = onNavigateToAchievements) {
                         Icon(
                             imageVector = Icons.Default.EmojiEvents,

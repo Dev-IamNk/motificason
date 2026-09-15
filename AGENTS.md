@@ -34,7 +34,7 @@ com.nk.motificason.
 - [x] Stage 4: Streak engine + freeze logic
 - [x] Stage 5: Calendar heatmap
 - [x] Stage 6: Achievements
-- [ ] Stage 7: Notifications
+- [x] Stage 7: Notifications
 - [ ] Stage 8: Share cards
 - [ ] Stage 9: Offline cache
 - [ ] Stage 10: Polish
