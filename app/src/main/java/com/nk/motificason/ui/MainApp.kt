@@ -26,13 +26,16 @@ import com.nk.motificason.data.model.LockIn
 import com.nk.motificason.ui.home.HomeViewModel
 import com.nk.motificason.ui.lockin.LockInScreen
 import com.nk.motificason.ui.lockin.LockInViewModel
+import com.nk.motificason.ui.achievements.AchievementsScreen
+import com.nk.motificason.ui.achievements.AchievementsViewModel
 import com.nk.motificason.ui.streak.StreakScreen
 import com.nk.motificason.ui.streak.StreakViewModel
 
 enum class AuthenticatedScreen {
     HOME,
     LOCK_INS,
-    HABIT_STREAK
+    HABIT_STREAK,
+    ACHIEVEMENTS
 }
 
 @Composable
@@ -71,6 +74,9 @@ fun MainApp(
                         },
                         onNavigateToLockIns = {
                             authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                        },
+                        onNavigateToAchievements = {
+                            authenticatedScreen = AuthenticatedScreen.ACHIEVEMENTS
                         },
                         modifier = modifier
                     )
@@ -132,6 +138,24 @@ fun MainApp(
                     } else {
                         authenticatedScreen = AuthenticatedScreen.LOCK_INS
                     }
+                }
+                AuthenticatedScreen.ACHIEVEMENTS -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.HOME
+                        homeViewModel.loadTodayDashboard()
+                    }
+                    val achievementsViewModel: AchievementsViewModel = viewModel()
+                    val achievementsUiState by achievementsViewModel.uiState.collectAsState()
+
+                    AchievementsScreen(
+                        uiState = achievementsUiState,
+                        onBackClick = {
+                            authenticatedScreen = AuthenticatedScreen.HOME
+                            homeViewModel.loadTodayDashboard()
+                        },
+                        onRefresh = { achievementsViewModel.loadAchievements() },
+                        modifier = modifier
+                    )
                 }
             }
         }

@@ -140,6 +140,13 @@ class HomeViewModel(
                     lockInGroup.copy(habits = finalHabits)
                 }
                 _uiState.value = _uiState.value.copy(lockInsWithCheckIns = finalList)
+
+                // Check achievements whenever a check-in is completed
+                if (updatedCheckIn.completed) {
+                    viewModelScope.launch {
+                        repository.evaluateAndUnlockAchievements(userId, habitId)
+                    }
+                }
             }.onFailure { error ->
                 // Rollback optimistic update on failure
                 val revertedList = _uiState.value.lockInsWithCheckIns.map { lockInGroup ->

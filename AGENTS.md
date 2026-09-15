@@ -33,7 +33,7 @@ com.nk.motificason.
 - [x] Stage 3: Home dashboard + check-in
 - [x] Stage 4: Streak engine + freeze logic
 - [x] Stage 5: Calendar heatmap
-- [ ] Stage 6: Achievements
+- [x] Stage 6: Achievements
 - [ ] Stage 7: Notifications
 - [ ] Stage 8: Share cards
 - [ ] Stage 9: Offline cache

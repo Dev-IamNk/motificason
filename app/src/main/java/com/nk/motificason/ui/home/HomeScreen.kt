@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Refresh
@@ -63,6 +64,7 @@ fun HomeScreen(
     onToggleHabit: (String) -> Unit,
     onRefresh: () -> Unit,
     onNavigateToLockIns: () -> Unit,
+    onNavigateToAchievements: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -87,6 +89,12 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToAchievements) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = "Achievements"
+                        )
+                    }
                     IconButton(onClick = onRefresh, enabled = !uiState.isLoading) {
                         Icon(
                             imageVector = Icons.Default.Refresh,

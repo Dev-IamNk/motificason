@@ -209,4 +209,139 @@ class LockInRepository {
             result
         }
     }
+
+    suspend fun getUserAchievements(userId: String): Result<List<com.nk.motificason.data.model.Achievement>> {
+        return runCatching {
+            client.from("achievements")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<com.nk.motificason.data.model.Achievement>()
+        }
+    }
+
+    suspend fun evaluateAndUnlockAchievements(
+        userId: String,
+        targetHabitId: String? = null
+    ): Result<List<com.nk.motificason.data.model.Achievement>> {
+        return runCatching {
+            val existing = client.from("achievements")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<com.nk.motificason.data.model.Achievement>()
+                .toMutableList()
+
+            val nowStr = java.time.LocalDate.now().toString()
+
+            // 1. Check account-wide achievements
+            val completedCheckIns = client.from("check_ins")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                        eq("completed", true)
+                    }
+                }
+                .decodeList<CheckIn>()
+
+            val totalCompleted = completedCheckIns.size
+
+            // first_checkin
+            if (totalCompleted >= 1 && existing.none { it.type == "first_checkin" }) {
+                runCatching {
+                    val created = client.from("achievements")
+                        .insert(
+                            com.nk.motificason.data.model.AchievementInsert(
+                                userId = userId,
+                                habitId = null,
+                                type = "first_checkin",
+                                unlockedAt = nowStr
+                            )
+                        ) {
+                            select()
+                        }
+                        .decodeSingle<com.nk.motificason.data.model.Achievement>()
+                    existing.add(created)
+                }
+            }
+
+            // total_checkins_100
+            if (totalCompleted >= 100 && existing.none { it.type == "total_checkins_100" }) {
+                runCatching {
+                    val created = client.from("achievements")
+                        .insert(
+                            com.nk.motificason.data.model.AchievementInsert(
+                                userId = userId,
+                                habitId = null,
+                                type = "total_checkins_100",
+                                unlockedAt = nowStr
+                            )
+                        ) {
+                            select()
+                        }
+                        .decodeSingle<com.nk.motificason.data.model.Achievement>()
+                    existing.add(created)
+                }
+            }
+
+            // 2. Check per-habit streak achievements
+            val habitsToCheck = if (!targetHabitId.isNullOrBlank()) {
+                client.from("habits")
+                    .select {
+                        filter {
+                            eq("id", targetHabitId)
+                            eq("user_id", userId)
+                        }
+                    }
+                    .decodeList<Habit>()
+            } else {
+                client.from("habits")
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                    }
+                    .decodeList<Habit>()
+            }
+
+            val today = java.time.LocalDate.now()
+            val streakMilestones = listOf(
+                Pair(7, "streak_7"),
+                Pair(30, "streak_30"),
+                Pair(100, "streak_100"),
+                Pair(365, "streak_365")
+            )
+
+            for (habit in habitsToCheck) {
+                val streakResult = getHabitStreak(habit, userId, today).getOrNull()
+                val currentStreak = streakResult?.currentStreak ?: 0
+
+                for ((target, type) in streakMilestones) {
+                    if (currentStreak >= target && existing.none { it.habitId == habit.id && it.type == type }) {
+                        runCatching {
+                            val created = client.from("achievements")
+                                .insert(
+                                    com.nk.motificason.data.model.AchievementInsert(
+                                        userId = userId,
+                                        habitId = habit.id,
+                                        type = type,
+                                        unlockedAt = nowStr
+                                    )
+                                ) {
+                                    select()
+                                }
+                                .decodeSingle<com.nk.motificason.data.model.Achievement>()
+                            existing.add(created)
+                        }
+                    }
+                }
+            }
+
+            existing
+        }
+    }
 }
