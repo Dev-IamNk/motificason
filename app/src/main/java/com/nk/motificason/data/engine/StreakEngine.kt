@@ -122,13 +122,17 @@ object StreakEngine {
         // --- 4. Total Completed Days ---
         val totalCompletedDays = completedDates.size
 
-        // --- 5. DayHistory Classification for calendar heatmap (last 30 days) ---
+        // --- 5. DayHistory Classification for calendar heatmap (5 full weeks = 35 days) ---
+        val currentWeekMonday = today.with(java.time.DayOfWeek.MONDAY)
+        val heatmapStartDate = currentWeekMonday.minusWeeks(4)
+        val heatmapEndDate = currentWeekMonday.plusDays(6) // Sunday of current week
+
         val historyDays = mutableListOf<DayHistory>()
-        var dayPointer = today.minusDays(29)
-        while (!dayPointer.isAfter(today)) {
+        var dayPointer = heatmapStartDate
+        while (!dayPointer.isAfter(heatmapEndDate)) {
             val status = when {
-                dayPointer.isEqual(today) && !isTodayCompleted -> DayStatus.UPCOMING
                 dayPointer.isAfter(today) -> DayStatus.UPCOMING
+                dayPointer.isEqual(today) && !isTodayCompleted -> DayStatus.UPCOMING
                 completedDates.contains(dayPointer) -> DayStatus.COMPLETED
                 frozenDateToFreezeMap.containsKey(dayPointer) -> DayStatus.FROZEN
                 dayPointer.isBefore(boundaryDate) -> DayStatus.UPCOMING

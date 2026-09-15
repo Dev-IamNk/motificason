@@ -245,40 +245,8 @@ fun StreakScreen(
                     }
                 }
 
-                // Day Status Breakdown (reusable for Stage 5 heatmap)
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Activity History (Last 30 Days)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Daily status breakdown used for streak and calendar heatmaps",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Status Legend
-                        StatusLegend()
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Days grid
-                        DaysStatusGrid(days = uiState.dayHistory)
-                    }
-                }
+                // Calendar Heatmap (GitHub contribution graph style for past 5 weeks)
+                CalendarHeatmap(days = uiState.dayHistory)
             }
         }
     }
@@ -327,98 +295,6 @@ fun StatCard(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-        }
-    }
-}
-
-@Composable
-fun StatusLegend() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LegendItem(label = "Done", color = Color(0xFF4CAF50))
-        LegendItem(label = "Frozen", color = Color(0xFF03A9F4))
-        LegendItem(label = "Missed", color = Color(0xFFE57373))
-        LegendItem(label = "Upcoming", color = Color(0xFF9E9E9E))
-    }
-}
-
-@Composable
-fun LegendItem(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun DaysStatusGrid(days: List<DayHistory>) {
-    val formatter = DateTimeFormatter.ofPattern("d")
-
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        days.forEach { dayHistory ->
-            val (bgColor, contentColor, icon) = when (dayHistory.status) {
-                DayStatus.COMPLETED -> Triple(
-                    Color(0xFF4CAF50),
-                    Color.White,
-                    Icons.Default.Check
-                )
-                DayStatus.FROZEN -> Triple(
-                    Color(0xFF03A9F4),
-                    Color.White,
-                    Icons.Default.AcUnit
-                )
-                DayStatus.MISSED -> Triple(
-                    Color(0xFFFFCDD2),
-                    Color(0xFFC62828),
-                    Icons.Default.Close
-                )
-                DayStatus.UPCOMING -> Triple(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                    Icons.Default.RadioButtonUnchecked
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(bgColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = dayHistory.date.format(formatter),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor
-                    )
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = contentColor,
-                        modifier = Modifier.size(10.dp)
-                    )
-                }
-            }
         }
     }
 }
