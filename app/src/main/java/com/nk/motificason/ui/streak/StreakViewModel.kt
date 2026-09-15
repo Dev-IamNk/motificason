@@ -44,7 +44,22 @@ class StreakViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            // 1. Instant load from Room cache (no spinner if cached data exists)
+            val cached = repository.getCachedHabitStreak(habit.id)
+            if (cached != null) {
+                _uiState.value = _uiState.value.copy(
+                    currentStreak = cached.currentStreak,
+                    longestStreak = cached.longestStreak,
+                    totalCompletedDays = cached.totalCompletedDays,
+                    unusedFreezeCount = cached.unusedFreezeCount,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            }
+
+            // 2. Background refresh and recalculation from Supabase
             val result = repository.getHabitStreak(habit, userId, LocalDate.now())
             result.onSuccess { data ->
                 _uiState.value = _uiState.value.copy(
@@ -57,10 +72,14 @@ class StreakViewModel(
                     isLoading = false
                 )
             }.onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = error.message ?: "Failed to calculate streak."
-                )
+                if (_uiState.value.currentStreak == 0 && _uiState.value.totalCompletedDays == 0) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Failed to calculate streak."
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
             }
         }
     }

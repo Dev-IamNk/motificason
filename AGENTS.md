@@ -36,7 +36,7 @@ com.nk.motificason.
 - [x] Stage 6: Achievements
 - [x] Stage 7: Notifications
 - [x] Stage 8: Share cards
-- [ ] Stage 9: Offline cache
+- [x] Stage 9: Offline cache
 - [ ] Stage 10: Polish
 
 ## Instructions for the agent

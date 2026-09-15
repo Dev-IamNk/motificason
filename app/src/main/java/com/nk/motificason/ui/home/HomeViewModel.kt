@@ -1,5 +1,6 @@
 package com.nk.motificason.ui.home
 
+import com.nk.motificason.data.local.SyncManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nk.motificason.data.LockInRepository
@@ -35,6 +36,11 @@ class HomeViewModel(
 
     init {
         loadTodayDashboard()
+        viewModelScope.launch {
+            SyncManager.syncCompletedEvents.collect {
+                loadTodayDashboard()
+            }
+        }
     }
 
     private fun getCurrentUserId(): String? {
@@ -61,18 +67,35 @@ class HomeViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val result = repository.getTodayDashboard(userId, dateIso)
-            result.onSuccess { data ->
+            // 1. Instant load from Room cache (no spinner if data exists)
+            val cached = repository.getCachedTodayDashboard(userId, dateIso)
+            if (cached.isNotEmpty()) {
                 _uiState.value = _uiState.value.copy(
-                    lockInsWithCheckIns = data,
-                    isLoading = false
+                    lockInsWithCheckIns = cached,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            }
+
+            // 2. Background refresh from Supabase
+            val result = repository.getTodayDashboard(userId, dateIso)
+            result.onSuccess { freshData ->
+                _uiState.value = _uiState.value.copy(
+                    lockInsWithCheckIns = freshData,
+                    isLoading = false,
+                    errorMessage = null
                 )
             }.onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = error.message ?: "Failed to load today's dashboard."
-                )
+                if (_uiState.value.lockInsWithCheckIns.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Failed to load today's dashboard."
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
             }
         }
     }
@@ -97,25 +120,37 @@ class HomeViewModel(
         val userId = getCurrentUserId() ?: return
         val date = _uiState.value.todayDate
 
-        // Optimistic UI update
-        val optimisticList = currentList.map { lockInGroup ->
-            val updatedHabits = lockInGroup.habits.map { h ->
-                if (h.habit.id == habitId) {
-                    h.copy(isCompleted = newCompleted)
-                } else {
-                    h
-                }
-            }
-            lockInGroup.copy(habits = updatedHabits)
-        }
-
-        _uiState.value = _uiState.value.copy(
-            lockInsWithCheckIns = optimisticList,
-            errorMessage = null
-        )
-
-        // Asynchronous Supabase update
         viewModelScope.launch {
+            // 1. Save immediately to Room with synced = false
+            val offlineCheckIn = repository.recordCheckInOffline(
+                habitId = habitId,
+                userId = userId,
+                date = date,
+                existingCheckInId = targetHabit.checkInId,
+                newCompleted = newCompleted
+            )
+
+            // 2. Instant UI update
+            val optimisticList = _uiState.value.lockInsWithCheckIns.map { lockInGroup ->
+                val updatedHabits = lockInGroup.habits.map { h ->
+                    if (h.habit.id == habitId) {
+                        h.copy(
+                            isCompleted = newCompleted,
+                            checkInId = offlineCheckIn.id
+                        )
+                    } else {
+                        h
+                    }
+                }
+                lockInGroup.copy(habits = updatedHabits)
+            }
+
+            _uiState.value = _uiState.value.copy(
+                lockInsWithCheckIns = optimisticList,
+                errorMessage = null
+            )
+
+            // 3. Attempt background Supabase sync
             val result = repository.toggleCheckIn(
                 habitId = habitId,
                 userId = userId,
@@ -125,7 +160,8 @@ class HomeViewModel(
             )
 
             result.onSuccess { updatedCheckIn ->
-                // Update checkInId in case it was a new record
+                repository.markCheckInSynced(updatedCheckIn.id)
+
                 val finalList = _uiState.value.lockInsWithCheckIns.map { lockInGroup ->
                     val finalHabits = lockInGroup.habits.map { h ->
                         if (h.habit.id == habitId) {
@@ -141,28 +177,16 @@ class HomeViewModel(
                 }
                 _uiState.value = _uiState.value.copy(lockInsWithCheckIns = finalList)
 
-                // Check achievements whenever a check-in is completed
+                // Check achievements when check-in is completed
                 if (updatedCheckIn.completed) {
                     viewModelScope.launch {
                         repository.evaluateAndUnlockAchievements(userId, habitId)
                     }
                 }
-            }.onFailure { error ->
-                // Rollback optimistic update on failure
-                val revertedList = _uiState.value.lockInsWithCheckIns.map { lockInGroup ->
-                    val revertedHabits = lockInGroup.habits.map { h ->
-                        if (h.habit.id == habitId) {
-                            h.copy(isCompleted = targetHabit.isCompleted)
-                        } else {
-                            h
-                        }
-                    }
-                    lockInGroup.copy(habits = revertedHabits)
-                }
-                _uiState.value = _uiState.value.copy(
-                    lockInsWithCheckIns = revertedList,
-                    errorMessage = "Failed to update check-in: ${error.message ?: "Network error"}"
-                )
+            }.onFailure {
+                // Offline: check-in is safely saved in Room with synced = false.
+                // SyncManager will sync it as soon as connectivity returns.
+                // Do NOT roll back UI state.
             }
         }
     }

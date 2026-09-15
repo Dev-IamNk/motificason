@@ -51,7 +51,19 @@ class LockInViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            // 1. Instant load from Room cache (no spinner if cached data exists)
+            val cached = repository.getCachedLockInsWithHabits(userId)
+            if (cached.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(
+                    lockInsWithHabits = cached,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            }
+
+            // 2. Background refresh from Supabase
             val result = repository.getLockInsWithHabits(userId)
             result.onSuccess { data ->
                 _uiState.value = _uiState.value.copy(
@@ -59,10 +71,14 @@ class LockInViewModel(
                     isLoading = false
                 )
             }.onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = error.message ?: "Failed to load Lock-Ins."
-                )
+                if (_uiState.value.lockInsWithHabits.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Failed to load Lock-Ins."
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
             }
         }
     }
