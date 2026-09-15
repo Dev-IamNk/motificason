@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1075859361199",
+    "project_id": "motificason",
+    "storage_bucket": "motificason.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075859361199:android:5d7b44815dbbeddc42f35a",
+        "android_client_info": {
+          "package_name": "com.nk.motificason"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAccxOrlOEDXD6DKH9823EWMAJqSWKnkIo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
