@@ -33,6 +33,9 @@ import com.nk.motificason.ui.notification.NotificationSettingsScreen
 import com.nk.motificason.ui.notification.NotificationSettingsViewModel
 import com.nk.motificason.notification.NotificationPreferences
 import com.nk.motificason.notification.NotificationScheduler
+import com.nk.motificason.ui.routine.DailyRoutineScreen
+import com.nk.motificason.ui.routine.DailyRoutineViewModel
+import com.nk.motificason.ui.share.DailyRoutineShareCardScreen
 import com.nk.motificason.ui.share.ShareCardScreen
 import com.nk.motificason.ui.streak.StreakScreen
 import com.nk.motificason.ui.streak.StreakViewModel
@@ -43,7 +46,9 @@ enum class AuthenticatedScreen {
     HABIT_STREAK,
     ACHIEVEMENTS,
     NOTIFICATION_SETTINGS,
-    SHARE_CARD
+    SHARE_CARD,
+    DAILY_ROUTINE,
+    DAILY_ROUTINE_SHARE_CARD
 }
 
 @Composable
@@ -96,6 +101,9 @@ fun MainApp(
                         },
                         onNavigateToNotificationSettings = {
                             authenticatedScreen = AuthenticatedScreen.NOTIFICATION_SETTINGS
+                        },
+                        onNavigateToDailyRoutine = {
+                            authenticatedScreen = AuthenticatedScreen.DAILY_ROUTINE
                         },
                         modifier = modifier
                     )
@@ -229,6 +237,49 @@ fun MainApp(
                     } else {
                         authenticatedScreen = AuthenticatedScreen.LOCK_INS
                     }
+                }
+                AuthenticatedScreen.DAILY_ROUTINE -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.HOME
+                        homeViewModel.loadTodayDashboard()
+                    }
+                    val routineViewModel: DailyRoutineViewModel = viewModel()
+                    val routineUiState by routineViewModel.uiState.collectAsState()
+
+                    DailyRoutineScreen(
+                        uiState = routineUiState,
+                        onTitleChange = { routineViewModel.onTitleChange(it) },
+                        onEmojiChange = { routineViewModel.onEmojiChange(it) },
+                        onStartTimeChange = { routineViewModel.onStartTimeChange(it) },
+                        onEndTimeChange = { routineViewModel.onEndTimeChange(it) },
+                        onAddActivity = { routineViewModel.addActivity() },
+                        onDeleteActivity = { routineViewModel.deleteActivity(it) },
+                        onRefresh = { routineViewModel.loadTodayActivities() },
+                        onNavigateToShareCard = {
+                            authenticatedScreen = AuthenticatedScreen.DAILY_ROUTINE_SHARE_CARD
+                        },
+                        onBackClick = {
+                            authenticatedScreen = AuthenticatedScreen.HOME
+                            homeViewModel.loadTodayDashboard()
+                        },
+                        modifier = modifier
+                    )
+                }
+                AuthenticatedScreen.DAILY_ROUTINE_SHARE_CARD -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.DAILY_ROUTINE
+                    }
+                    val routineViewModel: DailyRoutineViewModel = viewModel()
+                    val routineUiState by routineViewModel.uiState.collectAsState()
+
+                    DailyRoutineShareCardScreen(
+                        activities = routineUiState.activities,
+                        displayDate = routineUiState.displayDate,
+                        onBackClick = {
+                            authenticatedScreen = AuthenticatedScreen.DAILY_ROUTINE
+                        },
+                        modifier = modifier
+                    )
                 }
             }
         }

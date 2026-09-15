@@ -321,3 +321,26 @@ val DEFAULT_MOTIVATION_MESSAGES = listOf(
     MotivationMessageInsert("General", "Savage", "Excuses don't build results. Get moving or stay right where you are! 😤"),
     MotivationMessageInsert("General", "Brainrot", "Aura check failed if you skip today. Lock in and stay gigachad! 🗿")
 )
+
+@Serializable
+data class DailyActivity(
+    val id: String = "",
+    @SerialName("user_id") val userId: String,
+    val title: String,
+    val emoji: String,
+    val date: String,
+    @SerialName("start_time") val startTime: String,
+    @SerialName("end_time") val endTime: String,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class DailyActivityInsert(
+    @SerialName("user_id") val userId: String,
+    val title: String,
+    val emoji: String,
+    val date: String,
+    @SerialName("start_time") val startTime: String,
+    @SerialName("end_time") val endTime: String
+)
+
