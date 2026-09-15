@@ -20,6 +20,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.nk.motificason.ui.home.HomeViewModel
 import com.nk.motificason.ui.lockin.LockInScreen
 import com.nk.motificason.ui.lockin.LockInViewModel
 
@@ -47,11 +48,15 @@ fun MainApp(
             }
         }
         is SessionStatus.Authenticated -> {
+            val homeViewModel: HomeViewModel = viewModel()
             when (authenticatedScreen) {
                 AuthenticatedScreen.HOME -> {
+                    val homeUiState by homeViewModel.uiState.collectAsState()
                     HomeScreen(
+                        uiState = homeUiState,
                         userEmail = viewModel.getCurrentUserEmail(),
-                        isLoading = uiState.isLoading,
+                        onToggleHabit = { homeViewModel.toggleHabit(it) },
+                        onRefresh = { homeViewModel.loadTodayDashboard() },
                         onLogoutClick = {
                             authenticatedScreen = AuthenticatedScreen.HOME
                             viewModel.signOut()
@@ -65,6 +70,7 @@ fun MainApp(
                 AuthenticatedScreen.LOCK_INS -> {
                     BackHandler {
                         authenticatedScreen = AuthenticatedScreen.HOME
+                        homeViewModel.loadTodayDashboard()
                     }
                     val lockInViewModel: LockInViewModel = viewModel()
                     val lockInUiState by lockInViewModel.uiState.collectAsState()
@@ -73,6 +79,7 @@ fun MainApp(
                         uiState = lockInUiState,
                         onBackClick = {
                             authenticatedScreen = AuthenticatedScreen.HOME
+                            homeViewModel.loadTodayDashboard()
                         },
                         onRefresh = { lockInViewModel.loadLockIns() },
                         onOpenPickDialog = { lockInViewModel.openPickLockInDialog() },

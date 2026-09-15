@@ -30,7 +30,7 @@ com.nk.motificason.
 ## Build status
 - [x] Stage 1: Auth (Supabase email/password, session persistence)
 - [x] Stage 2: Lock-Ins & Habits
-- [ ] Stage 3: Home dashboard + check-in
+- [x] Stage 3: Home dashboard + check-in
 - [ ] Stage 4: Streak engine + freeze logic
 - [ ] Stage 5: Calendar heatmap
 - [ ] Stage 6: Achievements

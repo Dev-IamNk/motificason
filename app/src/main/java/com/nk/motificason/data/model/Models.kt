@@ -40,6 +40,43 @@ data class LockInWithHabits(
     val habits: List<Habit> = emptyList()
 )
 
+@Serializable
+data class CheckIn(
+    val id: String = "",
+    @SerialName("habit_id") val habitId: String,
+    @SerialName("user_id") val userId: String,
+    val date: String,
+    val completed: Boolean,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class CheckInInsert(
+    @SerialName("habit_id") val habitId: String,
+    @SerialName("user_id") val userId: String,
+    val date: String,
+    val completed: Boolean
+)
+
+@Serializable
+data class CheckInUpdate(
+    val completed: Boolean
+)
+
+data class HabitWithCheckIn(
+    val habit: Habit,
+    val isCompleted: Boolean = false,
+    val checkInId: String? = null
+)
+
+data class LockInWithHabitCheckIns(
+    val lockIn: LockIn,
+    val habits: List<HabitWithCheckIn> = emptyList()
+) {
+    val completedCount: Int get() = habits.count { it.isCompleted }
+    val totalCount: Int get() = habits.size
+}
+
 data class PresetLockIn(
     val name: String,
     val emoji: String
