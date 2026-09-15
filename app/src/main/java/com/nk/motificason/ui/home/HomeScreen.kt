@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nk.motificason.data.model.HabitWithCheckIn
 import com.nk.motificason.data.model.LockInWithHabitCheckIns
+import com.nk.motificason.ui.components.ErrorBanner
+import com.nk.motificason.ui.components.LoadingStateIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,42 +139,17 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Error banner
+            // Error banner with retry option
             if (!uiState.errorMessage.isNullOrBlank()) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ErrorOutline,
-                            contentDescription = "Error",
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = uiState.errorMessage,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                ErrorBanner(
+                    errorMessage = uiState.errorMessage,
+                    onRetry = onRefresh,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
 
             if (uiState.isLoading && uiState.lockInsWithCheckIns.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                LoadingStateIndicator(message = "Loading your daily lock-ins...")
             } else if (uiState.lockInsWithCheckIns.isEmpty() || uiState.totalHabits == 0) {
                 // Empty state when no Lock-Ins or habits have been created yet
                 EmptyDashboard(

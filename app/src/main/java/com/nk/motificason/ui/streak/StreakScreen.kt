@@ -27,11 +27,14 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import com.nk.motificason.ui.components.ErrorBanner
+import com.nk.motificason.ui.components.LoadingStateIndicator
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -65,6 +68,7 @@ fun StreakScreen(
     lockIn: LockIn?,
     uiState: StreakUiState,
     onBackClick: () -> Unit,
+    onRefresh: () -> Unit = {},
     onShareClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -84,6 +88,12 @@ fun StreakScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onRefresh, enabled = !uiState.isLoading) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh Streak"
+                        )
+                    }
                     IconButton(onClick = onShareClick) {
                         Icon(
                             imageVector = Icons.Default.Share,
@@ -98,14 +108,10 @@ fun StreakScreen(
         }
     ) { innerPadding ->
         if (uiState.isLoading && uiState.dayHistory.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingStateIndicator(
+                message = "Loading streak & history...",
+                modifier = Modifier.padding(innerPadding)
+            )
         } else {
             Column(
                 modifier = Modifier
@@ -145,31 +151,12 @@ fun StreakScreen(
                     }
                 }
 
-                // Error banner
+                // Error banner with retry option
                 if (!uiState.errorMessage.isNullOrBlank()) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ErrorOutline,
-                                contentDescription = "Error",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = uiState.errorMessage,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
+                    ErrorBanner(
+                        errorMessage = uiState.errorMessage,
+                        onRetry = onRefresh
+                    )
                 }
 
                 // Primary Streak Stats Cards

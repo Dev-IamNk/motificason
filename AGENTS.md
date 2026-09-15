@@ -37,7 +37,7 @@ com.nk.motificason.
 - [x] Stage 7: Notifications
 - [x] Stage 8: Share cards
 - [x] Stage 9: Offline cache
-- [ ] Stage 10: Polish
+- [x] Stage 10: Polish
 
 ## Instructions for the agent
 Before building anything, check the current codebase and this status

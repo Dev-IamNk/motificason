@@ -54,6 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nk.motificason.data.model.DailyActivity
+import com.nk.motificason.ui.components.ErrorBanner
+import com.nk.motificason.ui.components.LoadingStateIndicator
 
 val PRESET_ROUTINE_EMOJIS = listOf("💻", "🏋️", "🎸", "📚", "🧘", "🍽️", "😴", "🚶", "☕", "🎯", "🧠", "🔥")
 
@@ -118,42 +120,29 @@ fun DailyRoutineScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 14.dp)
-        ) {
-            // Error banner
-            if (!uiState.errorMessage.isNullOrBlank()) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ErrorOutline,
-                                contentDescription = "Error",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = uiState.errorMessage,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+        if (uiState.isLoading && uiState.activities.isEmpty()) {
+            LoadingStateIndicator(
+                message = "Loading today's schedule...",
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 14.dp)
+            ) {
+                // Error banner with retry option
+                if (!uiState.errorMessage.isNullOrBlank()) {
+                    item {
+                        ErrorBanner(
+                            errorMessage = uiState.errorMessage,
+                            onRetry = onRefresh
+                        )
                     }
                 }
-            }
 
             // Overview Card / Share Card Shortcut
             item {
@@ -409,6 +398,7 @@ fun DailyRoutineScreen(
             }
         }
     }
+}
 }
 
 @Composable

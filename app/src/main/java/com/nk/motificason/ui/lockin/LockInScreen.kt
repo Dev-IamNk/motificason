@@ -61,6 +61,9 @@ import com.nk.motificason.data.model.LockIn
 import com.nk.motificason.data.model.LockInWithHabits
 import com.nk.motificason.data.model.PRESET_LOCK_INS
 import com.nk.motificason.data.model.PresetLockIn
+import com.nk.motificason.ui.components.EmptyStateView
+import com.nk.motificason.ui.components.ErrorBanner
+import com.nk.motificason.ui.components.LoadingStateIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,76 +137,26 @@ fun LockInScreen(
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
-                // Error banner
+                // Error banner with retry option
                 if (!uiState.errorMessage.isNullOrBlank()) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ErrorOutline,
-                                contentDescription = "Error",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = uiState.errorMessage,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
+                    ErrorBanner(
+                        errorMessage = uiState.errorMessage,
+                        onRetry = onRefresh,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
 
                 if (uiState.isLoading && uiState.lockInsWithHabits.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingStateIndicator(message = "Loading your lock-ins & habits...")
                 } else if (uiState.lockInsWithHabits.isEmpty()) {
                     // Empty state
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "🔒",
-                            fontSize = 64.sp
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No Lock-Ins Yet",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Pick a preset lock-in like Coding Grind or Gym Mode, or build your own to start tracking your daily habits.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(onClick = onOpenPickDialog) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Pick a Lock-In")
-                        }
-                    }
+                    EmptyStateView(
+                        emoji = "🔒",
+                        title = "No Lock-Ins Yet",
+                        description = "Pick a preset lock-in like Coding Grind or Gym Mode, or build your own to start tracking your daily habits.",
+                        actionText = "Pick a Lock-In",
+                        onActionClick = onOpenPickDialog
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),

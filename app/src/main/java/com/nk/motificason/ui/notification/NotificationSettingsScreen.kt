@@ -74,6 +74,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
 import com.nk.motificason.data.model.MotivationTone
 import com.nk.motificason.data.model.NotificationSlot
+import com.nk.motificason.ui.components.ErrorBanner
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -167,6 +168,13 @@ fun NotificationSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
+            // Error banner if any
+            if (!uiState.errorMessage.isNullOrBlank()) {
+                item {
+                    ErrorBanner(errorMessage = uiState.errorMessage)
+                }
+            }
+
             // Android 13+ permission warning banner if permission is missing
             if (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 item {

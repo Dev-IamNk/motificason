@@ -49,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nk.motificason.data.model.AchievementUiModel
+import com.nk.motificason.ui.components.ErrorBanner
+import com.nk.motificason.ui.components.LoadingStateIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,42 +106,17 @@ fun AchievementsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Error banner
+            // Error banner with retry option
             if (!uiState.errorMessage.isNullOrBlank()) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ErrorOutline,
-                            contentDescription = "Error",
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = uiState.errorMessage,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                ErrorBanner(
+                    errorMessage = uiState.errorMessage,
+                    onRetry = onRefresh,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
 
             if (uiState.isLoading && uiState.totalAvailableCount == 0) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                LoadingStateIndicator(message = "Loading achievements & trophies...")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -152,6 +129,50 @@ fun AchievementsScreen(
                             unlockedCount = uiState.totalUnlockedCount,
                             totalCount = uiState.totalAvailableCount
                         )
+                    }
+
+                    // Empty state callout if no achievements unlocked yet
+                    if (uiState.totalUnlockedCount == 0) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.size(44.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text("🏆", fontSize = 22.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(14.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "No Milestones Unlocked Yet",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Check in to daily habits and build consistency to unlock your first streak badges and trophies!",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     // Section 1: Account-Wide Milestones

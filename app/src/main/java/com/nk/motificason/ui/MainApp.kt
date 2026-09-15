@@ -160,6 +160,9 @@ fun MainApp(
                             onBackClick = {
                                 authenticatedScreen = AuthenticatedScreen.LOCK_INS
                             },
+                            onRefresh = {
+                                streakViewModel.loadStreak(habit)
+                            },
                             onShareClick = {
                                 authenticatedScreen = AuthenticatedScreen.SHARE_CARD
                             },
