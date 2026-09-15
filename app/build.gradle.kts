@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     id("com.google.gms.google-services")
 }
 
@@ -59,4 +60,5 @@ dependencies {
     implementation("io.ktor:ktor-client-android:3.0.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.kotlinx.serialization.json)
 }

@@ -16,6 +16,18 @@ import com.nk.motificason.ui.auth.SignUpScreen
 import com.nk.motificason.ui.home.HomeScreen
 import io.github.jan.supabase.auth.status.SessionStatus
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.nk.motificason.ui.lockin.LockInScreen
+import com.nk.motificason.ui.lockin.LockInViewModel
+
+enum class AuthenticatedScreen {
+    HOME,
+    LOCK_INS
+}
+
 @Composable
 fun MainApp(
     viewModel: AuthViewModel = viewModel(),
@@ -23,6 +35,7 @@ fun MainApp(
 ) {
     val sessionStatus by viewModel.sessionStatus.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    var authenticatedScreen by rememberSaveable { mutableStateOf(AuthenticatedScreen.HOME) }
 
     when (sessionStatus) {
         is SessionStatus.Initializing -> {
@@ -34,12 +47,48 @@ fun MainApp(
             }
         }
         is SessionStatus.Authenticated -> {
-            HomeScreen(
-                userEmail = viewModel.getCurrentUserEmail(),
-                isLoading = uiState.isLoading,
-                onLogoutClick = { viewModel.signOut() },
-                modifier = modifier
-            )
+            when (authenticatedScreen) {
+                AuthenticatedScreen.HOME -> {
+                    HomeScreen(
+                        userEmail = viewModel.getCurrentUserEmail(),
+                        isLoading = uiState.isLoading,
+                        onLogoutClick = {
+                            authenticatedScreen = AuthenticatedScreen.HOME
+                            viewModel.signOut()
+                        },
+                        onNavigateToLockIns = {
+                            authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                        },
+                        modifier = modifier
+                    )
+                }
+                AuthenticatedScreen.LOCK_INS -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.HOME
+                    }
+                    val lockInViewModel: LockInViewModel = viewModel()
+                    val lockInUiState by lockInViewModel.uiState.collectAsState()
+
+                    LockInScreen(
+                        uiState = lockInUiState,
+                        onBackClick = {
+                            authenticatedScreen = AuthenticatedScreen.HOME
+                        },
+                        onRefresh = { lockInViewModel.loadLockIns() },
+                        onOpenPickDialog = { lockInViewModel.openPickLockInDialog() },
+                        onClosePickDialog = { lockInViewModel.closePickLockInDialog() },
+                        onSelectPreset = { lockInViewModel.pickPreset(it) },
+                        onCustomNameChange = { lockInViewModel.onCustomNameChange(it) },
+                        onCustomEmojiChange = { lockInViewModel.onCustomEmojiChange(it) },
+                        onCreateCustomLockIn = { lockInViewModel.createCustomLockIn() },
+                        onOpenAddHabitDialog = { lockInViewModel.openAddHabitDialog(it) },
+                        onCloseAddHabitDialog = { lockInViewModel.closeAddHabitDialog() },
+                        onHabitTitleChange = { lockInViewModel.onHabitTitleChange(it) },
+                        onCreateHabit = { lockInViewModel.createHabit() },
+                        modifier = modifier
+                    )
+                }
+            }
         }
         is SessionStatus.NotAuthenticated,
         is SessionStatus.RefreshFailure -> {

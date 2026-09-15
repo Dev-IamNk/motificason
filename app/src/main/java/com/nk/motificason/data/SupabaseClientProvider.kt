@@ -3,6 +3,7 @@ package com.nk.motificason.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 
 object SupabaseClientProvider {
     const val SUPABASE_URL = "https://xzjzktrtprgffuyofuny.supabase.co"
@@ -14,6 +15,7 @@ object SupabaseClientProvider {
             supabaseKey = SUPABASE_KEY
         ) {
             install(Auth)
+            install(Postgrest)
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,7 @@ fun HomeScreen(
     userEmail: String?,
     isLoading: Boolean,
     onLogoutClick: () -> Unit,
+    onNavigateToLockIns: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -85,6 +87,22 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = onNavigateToLockIns,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text(
+                    text = "Lock-Ins & Habits →",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = onLogoutClick,
