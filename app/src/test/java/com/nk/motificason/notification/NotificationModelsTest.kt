@@ -61,4 +61,18 @@ class NotificationModelsTest {
             }
         }
     }
+
+    @Test
+    fun testCalculateNextOccurrence_alwaysInFutureAndUnder24Hours() {
+        // Test various times of day
+        val testTimes = listOf("00:00", "08:00", "12:30", "18:45", "23:59")
+        val maxDelayMs = java.util.concurrent.TimeUnit.HOURS.toMillis(24)
+
+        for (timeStr in testTimes) {
+            val (delayMs, epochMillis) = NotificationScheduler.calculateNextOccurrence(timeStr)
+            assertTrue("Delay should be positive for $timeStr", delayMs > 0)
+            assertTrue("Delay should never exceed 24 hours for $timeStr", delayMs <= maxDelayMs)
+            assertTrue("Target epoch millis should be in the future for $timeStr", epochMillis > System.currentTimeMillis())
+        }
+    }
 }

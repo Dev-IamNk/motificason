@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nk.motificason.data.NotificationRepository
+import com.nk.motificason.data.SupabaseClientProvider
+import com.nk.motificason.data.model.LockIn
 import com.nk.motificason.data.model.MotivationTone
 import com.nk.motificason.data.model.NotificationSlot
 import com.nk.motificason.notification.NotificationPreferences
 import com.nk.motificason.notification.NotificationScheduler
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +26,7 @@ data class SlotUiState(
 data class NotificationSettingsUiState(
     val selectedTone: MotivationTone = MotivationTone.COACH,
     val slots: List<SlotUiState> = emptyList(),
+    val canScheduleExactAlarms: Boolean = true,
     val isSeeding: Boolean = false,
     val infoMessage: String? = null,
     val errorMessage: String? = null
@@ -56,11 +61,37 @@ class NotificationSettingsViewModel(
                 time = prefs.getSlotTime(slot)
             )
         }
+        val exactAllowed = NotificationScheduler.canScheduleExactAlarms(context)
 
         _uiState.value = _uiState.value.copy(
             selectedTone = currentTone,
-            slots = slotStates
+            slots = slotStates,
+            canScheduleExactAlarms = exactAllowed
         )
+
+        // Cache active categories in background
+        viewModelScope.launch {
+            runCatching {
+                val auth = SupabaseClientProvider.client.auth
+                val userId = auth.currentUserOrNull()?.id ?: auth.currentSessionOrNull()?.user?.id
+                if (userId != null) {
+                    val lockIns = SupabaseClientProvider.client.from("lock_ins")
+                        .select {
+                            filter {
+                                eq("user_id", userId)
+                            }
+                        }
+                        .decodeList<LockIn>()
+                    val names = lockIns.map { it.name }.toSet()
+                    prefs.setActiveCategories(names)
+                }
+            }
+        }
+    }
+
+    fun refreshExactAlarmPermission(context: Context) {
+        val exactAllowed = NotificationScheduler.canScheduleExactAlarms(context)
+        _uiState.value = _uiState.value.copy(canScheduleExactAlarms = exactAllowed)
     }
 
     fun selectTone(context: Context, tone: MotivationTone) {
@@ -80,7 +111,6 @@ class NotificationSettingsViewModel(
             NotificationScheduler.cancelSlot(context, slot)
         }
 
-        // Reload slots in state
         val updatedSlots = _uiState.value.slots.map {
             if (it.slot == slot) it.copy(isEnabled = enabled) else it
         }
@@ -95,7 +125,6 @@ class NotificationSettingsViewModel(
             NotificationScheduler.scheduleSlot(context, slot, newTime)
         }
 
-        // Reload slots in state
         val updatedSlots = _uiState.value.slots.map {
             if (it.slot == slot) it.copy(time = newTime) else it
         }

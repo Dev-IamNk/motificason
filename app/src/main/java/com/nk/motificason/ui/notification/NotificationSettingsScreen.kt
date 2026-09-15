@@ -64,6 +64,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.material.icons.filled.Alarm
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.DisposableEffect
 import com.nk.motificason.data.model.MotivationTone
 import com.nk.motificason.data.model.NotificationSlot
 import java.time.LocalTime
@@ -78,11 +86,25 @@ fun NotificationSettingsScreen(
     onTimeUpdated: (NotificationSlot, String) -> Unit,
     onSendTestNotification: () -> Unit,
     onClearInfoMessage: () -> Unit,
+    onRefreshExactAlarmPermission: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                onRefreshExactAlarmPermission()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // Android 13+ permission state
     var hasNotificationPermission by remember {
@@ -184,6 +206,59 @@ fun NotificationSettingsScreen(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text("Grant Permission")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Android 12+ Exact Alarm permission banner if missing
+            if (!uiState.canScheduleExactAlarms && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Alarm,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Exact Alarm Permission Needed",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "To ensure reminders ring at the exact minute even when your phone is locked or in battery saving mode, enable exact alarms.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                    runCatching { context.startActivity(intent) }.onFailure {
+                                        val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = Uri.parse("package:${context.packageName}")
+                                        }
+                                        context.startActivity(fallback)
+                                    }
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("Enable Exact Alarms")
                             }
                         }
                     }

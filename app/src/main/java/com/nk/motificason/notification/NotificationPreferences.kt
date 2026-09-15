@@ -14,6 +14,24 @@ class NotificationPreferences(context: Context) {
         private const val KEY_TONE = "user_motivation_tone"
         private const val KEY_SLOT_ENABLED_PREFIX = "slot_enabled_"
         private const val KEY_SLOT_TIME_PREFIX = "slot_time_"
+        private const val KEY_IS_INITIALIZED = "is_notifications_initialized"
+        private const val KEY_ACTIVE_CATEGORIES = "cached_active_categories"
+    }
+
+    fun isInitialized(): Boolean {
+        return prefs.getBoolean(KEY_IS_INITIALIZED, false)
+    }
+
+    fun setInitialized(initialized: Boolean) {
+        prefs.edit().putBoolean(KEY_IS_INITIALIZED, initialized).apply()
+    }
+
+    fun getActiveCategories(): Set<String> {
+        return prefs.getStringSet(KEY_ACTIVE_CATEGORIES, emptySet()) ?: emptySet()
+    }
+
+    fun setActiveCategories(categories: Set<String>) {
+        prefs.edit().putStringSet(KEY_ACTIVE_CATEGORIES, categories).apply()
     }
 
     fun getTone(): MotivationTone {

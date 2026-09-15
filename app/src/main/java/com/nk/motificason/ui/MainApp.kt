@@ -31,6 +31,7 @@ import com.nk.motificason.ui.achievements.AchievementsViewModel
 import androidx.compose.ui.platform.LocalContext
 import com.nk.motificason.ui.notification.NotificationSettingsScreen
 import com.nk.motificason.ui.notification.NotificationSettingsViewModel
+import com.nk.motificason.notification.NotificationPreferences
 import com.nk.motificason.notification.NotificationScheduler
 import com.nk.motificason.ui.streak.StreakScreen
 import com.nk.motificason.ui.streak.StreakViewModel
@@ -67,7 +68,10 @@ fun MainApp(
             val homeViewModel: HomeViewModel = viewModel()
             val appContext = LocalContext.current.applicationContext
             LaunchedEffect(Unit) {
-                NotificationScheduler.rescheduleAll(appContext)
+                val prefs = NotificationPreferences(appContext)
+                if (!prefs.isInitialized()) {
+                    NotificationScheduler.rescheduleAll(appContext)
+                }
             }
 
             when (authenticatedScreen) {
@@ -190,6 +194,7 @@ fun MainApp(
                         onTimeUpdated = { slot, newTime -> notificationViewModel.updateSlotTime(context, slot, newTime) },
                         onSendTestNotification = { notificationViewModel.sendTestNotification(context) },
                         onClearInfoMessage = { notificationViewModel.clearInfoMessage() },
+                        onRefreshExactAlarmPermission = { notificationViewModel.refreshExactAlarmPermission(context) },
                         onBackClick = {
                             authenticatedScreen = AuthenticatedScreen.HOME
                             homeViewModel.loadTodayDashboard()
