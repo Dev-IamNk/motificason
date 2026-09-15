@@ -35,7 +35,7 @@ com.nk.motificason.
 - [x] Stage 5: Calendar heatmap
 - [x] Stage 6: Achievements
 - [x] Stage 7: Notifications
-- [ ] Stage 8: Share cards
+- [x] Stage 8: Share cards
 - [ ] Stage 9: Offline cache
 - [ ] Stage 10: Polish
 

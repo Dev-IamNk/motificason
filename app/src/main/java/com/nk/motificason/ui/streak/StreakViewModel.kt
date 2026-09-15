@@ -19,6 +19,7 @@ data class StreakUiState(
     val totalCompletedDays: Int = 0,
     val unusedFreezeCount: Int = 0,
     val dayHistory: List<DayHistory> = emptyList(),
+    val currentStreakDays: List<DayHistory> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -52,6 +53,7 @@ class StreakViewModel(
                     totalCompletedDays = data.totalCompletedDays,
                     unusedFreezeCount = data.unusedFreezeCount,
                     dayHistory = data.dayHistory,
+                    currentStreakDays = data.currentStreakDays,
                     isLoading = false
                 )
             }.onFailure { error ->

@@ -23,7 +23,8 @@ data class StreakCalculationResult(
     val unusedFreezeCount: Int,
     val freezesConsumedInThisRun: List<Pair<StreakFreeze, LocalDate>>,
     val shouldAwardMilestoneFreeze: Boolean,
-    val dayHistory: List<DayHistory>
+    val dayHistory: List<DayHistory>,
+    val currentStreakDays: List<DayHistory> = emptyList()
 )
 
 object StreakEngine {
@@ -56,11 +57,13 @@ object StreakEngine {
         val newlyConsumedFreezes = mutableListOf<Pair<StreakFreeze, LocalDate>>()
 
         // --- 1. Current Streak: Walking backward from today ---
+        val streakDays = mutableListOf<DayHistory>()
         var currentStreak = 0
         val isTodayCompleted = completedDates.contains(today)
 
         var cursor: LocalDate = if (isTodayCompleted) {
             currentStreak++
+            streakDays.add(DayHistory(date = today, status = DayStatus.COMPLETED))
             today.minusDays(1)
         } else {
             // Today is in progress/upcoming, so walk starts from yesterday
@@ -74,15 +77,18 @@ object StreakEngine {
         while (cursor.isEqual(boundaryDate) || cursor.isAfter(boundaryDate.minusDays(1))) {
             if (completedDates.contains(cursor)) {
                 currentStreak++
+                streakDays.add(DayHistory(date = cursor, status = DayStatus.COMPLETED))
                 cursor = cursor.minusDays(1)
             } else if (frozenDateToFreezeMap.containsKey(cursor)) {
                 // Previously frozen day keeps streak alive
+                streakDays.add(DayHistory(date = cursor, status = DayStatus.FROZEN))
                 cursor = cursor.minusDays(1)
             } else if (unusedFreezes.isNotEmpty()) {
                 // Consume an unused freeze
                 val freezeToConsume = unusedFreezes.removeAt(0)
                 frozenDateToFreezeMap[cursor] = freezeToConsume
                 newlyConsumedFreezes.add(Pair(freezeToConsume, cursor))
+                streakDays.add(DayHistory(date = cursor, status = DayStatus.FROZEN))
                 cursor = cursor.minusDays(1)
             } else {
                 // Missed day with no freeze available -> streak breaks
@@ -149,7 +155,17 @@ object StreakEngine {
             unusedFreezeCount = unusedFreezes.size,
             freezesConsumedInThisRun = newlyConsumedFreezes,
             shouldAwardMilestoneFreeze = shouldAwardMilestoneFreeze,
-            dayHistory = historyDays
+            dayHistory = historyDays,
+            currentStreakDays = streakDays.reversed()
         )
+    }
+
+    fun extractCurrentStreakDays(result: StreakCalculationResult, maxDays: Int = 30): List<DayHistory> {
+        val days = result.currentStreakDays
+        return if (days.size > maxDays) {
+            days.takeLast(maxDays)
+        } else {
+            days
+        }
     }
 }

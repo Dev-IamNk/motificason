@@ -33,6 +33,7 @@ import com.nk.motificason.ui.notification.NotificationSettingsScreen
 import com.nk.motificason.ui.notification.NotificationSettingsViewModel
 import com.nk.motificason.notification.NotificationPreferences
 import com.nk.motificason.notification.NotificationScheduler
+import com.nk.motificason.ui.share.ShareCardScreen
 import com.nk.motificason.ui.streak.StreakScreen
 import com.nk.motificason.ui.streak.StreakViewModel
 
@@ -41,7 +42,8 @@ enum class AuthenticatedScreen {
     LOCK_INS,
     HABIT_STREAK,
     ACHIEVEMENTS,
-    NOTIFICATION_SETTINGS
+    NOTIFICATION_SETTINGS,
+    SHARE_CARD
 }
 
 @Composable
@@ -150,6 +152,9 @@ fun MainApp(
                             onBackClick = {
                                 authenticatedScreen = AuthenticatedScreen.LOCK_INS
                             },
+                            onShareClick = {
+                                authenticatedScreen = AuthenticatedScreen.SHARE_CARD
+                            },
                             modifier = modifier
                         )
                     } else {
@@ -201,6 +206,29 @@ fun MainApp(
                         },
                         modifier = modifier
                     )
+                }
+                AuthenticatedScreen.SHARE_CARD -> {
+                    BackHandler {
+                        authenticatedScreen = AuthenticatedScreen.HABIT_STREAK
+                    }
+                    val streakViewModel: StreakViewModel = viewModel()
+                    val streakUiState by streakViewModel.uiState.collectAsState()
+                    val habit = selectedHabit
+
+                    if (habit != null) {
+                        ShareCardScreen(
+                            habit = habit,
+                            lockIn = selectedLockIn,
+                            currentStreak = streakUiState.currentStreak,
+                            streakDays = streakUiState.currentStreakDays,
+                            onBackClick = {
+                                authenticatedScreen = AuthenticatedScreen.HABIT_STREAK
+                            },
+                            modifier = modifier
+                        )
+                    } else {
+                        authenticatedScreen = AuthenticatedScreen.LOCK_INS
+                    }
                 }
             }
         }
